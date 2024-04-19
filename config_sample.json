@@ -1,0 +1,11 @@
+{
+	"TASKS": {
+		"demo1": {
+			"schedule": "* * * * * *",
+			"plugin": "demo",
+			"params": {
+				"msg": "hello world"
+			}
+		}
+	}
+}
