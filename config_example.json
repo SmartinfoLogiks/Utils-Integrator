@@ -7,7 +7,7 @@
 				"msg": "hello world"
 			},
             "transform": "demo",
-            "pipe": "demo21"
+            "pipe": "demo2"
 		},
         "demo2": {
 			"plugin": "demo",
