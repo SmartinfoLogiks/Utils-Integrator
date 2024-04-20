@@ -55,7 +55,7 @@ _.each(CONFIG.TASKS, function(conf, k) {
 	
 	if(conf.schedule!=null && conf.schedule.length>0) {
 		const job = cron.schedule(conf.schedule, () => {
-				runIntegratorTask(k, conf, conf.params);
+				runIntegratorTask(k, conf, _.extend({"_TASK_MAIN": k}, conf.params));
 			});
 		ACTIVE_TASKS[k.toUpperCase()] = {
 			"opts": conf,
@@ -127,7 +127,7 @@ if(process.env.HOOK_PORT==null) {
 				res.status(404).send(`Requested hook not found or not loaded`);
 		  		return next();
 			} else {
-				runIntegratorTask(HOOKID, ACTIVE_TASKS[HOOKID].opts, _.extend({}, req.body, ACTIVE_TASKS[HOOKID].opts.params), function(responseData, errorMessage, interimObject) {
+				runIntegratorTask(HOOKID, ACTIVE_TASKS[HOOKID].opts, _.extend({"_TASK_MAIN": HOOKID}, req.body, ACTIVE_TASKS[HOOKID].opts.params), function(responseData, errorMessage, interimObject) {
 					if(responseData) {
 						res.send({
 							"status": "success",
@@ -153,7 +153,7 @@ if(process.env.HOOK_PORT==null) {
 			res.status(404).send(`Requested hook not found or not loaded`);
 	  		return next();
 		} else {
-			runIntegratorTask(HOOKID, ACTIVE_TASKS[HOOKID].opts, _.extend({}, req.body, ACTIVE_TASKS[HOOKID].opts.params), function(responseData, errorMessage, interimObject) {
+			runIntegratorTask(HOOKID, ACTIVE_TASKS[HOOKID].opts, _.extend({"_TASK_MAIN": HOOKID}, req.body, ACTIVE_TASKS[HOOKID].opts.params), function(responseData, errorMessage, interimObject) {
 				if(responseData) {
 					res.send({
 						"status": "success",
@@ -181,7 +181,8 @@ if(process.env.HOOK_PORT==null) {
 
 //Integrator Task Runner Function
 //Is a recursive itreation function which finds and executes the pipeline tasks
-function runIntegratorTask(k, conf, params, callback) {
+function runIntegratorTask(taskKey, conf, params, callback) {
+	params['_TASK_CURRENT'] = taskKey;
 	LOADED_PLUGINS[conf.plugin.toUpperCase()].runTask(params, function(responseData) {
 		if(conf.transform!=null) {
 			if(LOADED_PLUGINS[conf.transform.toUpperCase()].transform!=null) {
@@ -191,24 +192,24 @@ function runIntegratorTask(k, conf, params, callback) {
 							runIntegratorTask(conf.pipe, ACTIVE_TASKS[conf.pipe.toUpperCase()].opts, _.extend({}, ACTIVE_TASKS[conf.pipe.toUpperCase()].opts.params, transformResponse), callback);
 						} else if(LOADED_PLUGINS[conf.pipe.toUpperCase()]!=null && LOADED_PLUGINS[conf.pipe.toUpperCase()].runTask!=null) {
 							LOADED_PLUGINS[conf.pipe.toUpperCase()].runTask(transformResponse, function(pipeResponse) {
-								console.log("\x1b[33m%s\x1b[0m",`Task- ${k} Completed @ `+moment().format(), pipeResponse);
+								console.log("\x1b[33m%s\x1b[0m",`Task- ${taskKey} Completed @ `+moment().format(), pipeResponse);
 								if(callback!=null && typeof callback=="function") callback(pipeResponse);
 							});
 						} else {
-							console.log("\x1b[31m%s\x1b[0m",`\nTask Pipe - ${conf.pipe} for Task- ${k} Not Found`);
-							if(callback!=null && typeof callback=="function") callback(false, `Task Pipe - ${conf.pipe} for Task- ${k} Not Found`, transformResponse);
+							console.log("\x1b[31m%s\x1b[0m",`\nTask Pipe - ${conf.pipe} for Task- ${taskKey} Not Found`);
+							if(callback!=null && typeof callback=="function") callback(false, `Task Pipe - ${conf.pipe} for Task- ${taskKey} Not Found`, transformResponse);
 						}
 					} else {
-						console.log("\x1b[33m%s\x1b[0m",`Task- ${k} Completed @ `+moment().format(), transformResponse);
+						console.log("\x1b[33m%s\x1b[0m",`Task- ${taskKey} Completed @ `+moment().format(), transformResponse);
 						if(callback!=null && typeof callback=="function") callback(transformResponse);
 					}
 				});
 			} else {
-				console.log("\x1b[31m%s\x1b[0m",`\nTransformer - ${conf.transform} for Task- ${k} Not Found`);
-				if(callback!=null && typeof callback=="function") callback(false, `Transformer - ${conf.transform} for Task- ${k} Not Found`, responseData);
+				console.log("\x1b[31m%s\x1b[0m",`\nTransformer - ${conf.transform} for Task- ${taskKey} Not Found`);
+				if(callback!=null && typeof callback=="function") callback(false, `Transformer - ${conf.transform} for Task- ${taskKey} Not Found`, responseData);
 			}
 		} else {
-			console.log("\x1b[33m%s\x1b[0m",`Task- ${k} Completed @ `+moment().format(), responseData);
+			console.log("\x1b[33m%s\x1b[0m",`Task- ${taskKey} Completed @ `+moment().format(), responseData);
 			if(callback!=null && typeof callback=="function") callback(responseData);
 		}
 	});
