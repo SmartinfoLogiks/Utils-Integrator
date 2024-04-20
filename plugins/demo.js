@@ -11,6 +11,11 @@ module.exports = {
 
     runTask: function(params, callback) {
         console.log("Running Demo Task", params);
-        callback(true);
+        callback(params);
+    },
+
+    transform: function(data, callback) {
+        console.log("Running Demo Transformer", data);
+        callback(_.extend({"year": 1234}, data));
     }
 }

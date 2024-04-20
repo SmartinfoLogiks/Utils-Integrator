@@ -1,0 +1,27 @@
+{
+	"TASKS": {
+		"demo1": {
+			"schedule": "* * * * * *",
+			"plugin": "demo",
+			"params": {
+				"msg": "hello world"
+			},
+            "transform": "demo",
+            "pipe": "demo21"
+		},
+        "demo2": {
+			"plugin": "demo",
+			"params": {
+				"msg1": "hello world 2"
+			},
+            "transform": "demo",
+            "pipe": "demo3"
+		},
+        "demo3": {
+			"plugin": "demo",
+			"params": {
+				"msg2": "hello world 3"
+			}
+		}
+	}
+}

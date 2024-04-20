@@ -55,7 +55,7 @@ _.each(CONFIG.TASKS, function(conf, k) {
 	
 	if(conf.schedule!=null && conf.schedule.length>0) {
 		const job = cron.schedule(conf.schedule, () => {
-			  LOADED_PLUGINS[conf.plugin.toUpperCase()].runTask(conf.params, a=>{});
+				runIntegratorTask(k, conf, conf.params);
 			});
 		ACTIVE_TASKS[k.toUpperCase()] = {
 			"opts": conf,
@@ -127,8 +127,19 @@ if(process.env.HOOK_PORT==null) {
 				res.status(404).send(`Requested hook not found or not loaded`);
 		  		return next();
 			} else {
-				ACTIVE_TASKS[HOOKID].runner.runTask(_.extend({}, req.query, ACTIVE_TASKS[HOOKID].opts.params), function(responseData) {
-					res.send(responseData);
+				runIntegratorTask(HOOKID, ACTIVE_TASKS[HOOKID].opts, _.extend({}, req.body, ACTIVE_TASKS[HOOKID].opts.params), function(responseData, errorMessage, interimObject) {
+					if(responseData) {
+						res.send({
+							"status": "success",
+							"data": responseData
+						});
+					} else {
+						res.send({
+							"status": "error",
+							"msg": errorMessage,
+							"interim": interimObject
+						});
+					}
 					return next();
 				});
 			}
@@ -142,8 +153,19 @@ if(process.env.HOOK_PORT==null) {
 			res.status(404).send(`Requested hook not found or not loaded`);
 	  		return next();
 		} else {
-			ACTIVE_TASKS[HOOKID].runner.runTask(_.extend({}, req.body, ACTIVE_TASKS[HOOKID].opts.params), function(responseData) {
-				res.send(responseData);
+			runIntegratorTask(HOOKID, ACTIVE_TASKS[HOOKID].opts, _.extend({}, req.body, ACTIVE_TASKS[HOOKID].opts.params), function(responseData, errorMessage, interimObject) {
+				if(responseData) {
+					res.send({
+						"status": "success",
+						"data": responseData
+					});
+				} else {
+					res.send({
+						"status": "error",
+						"msg": errorMessage,
+						"interim": interimObject
+					});
+				}
 				return next();
 			});
 		}
@@ -154,4 +176,40 @@ if(process.env.HOOK_PORT==null) {
 
 	  console.log("\n\x1b[34m%s\x1b[0m","Integrator Initialization Completed @ "+moment().format());
 	})
+}
+
+
+//Integrator Task Runner Function
+//Is a recursive itreation function which finds and executes the pipeline tasks
+function runIntegratorTask(k, conf, params, callback) {
+	LOADED_PLUGINS[conf.plugin.toUpperCase()].runTask(params, function(responseData) {
+		if(conf.transform!=null) {
+			if(LOADED_PLUGINS[conf.transform.toUpperCase()].transform!=null) {
+				LOADED_PLUGINS[conf.transform.toUpperCase()].transform(responseData, function(transformResponse) {
+					if(conf.pipe!=null) {
+						if(ACTIVE_TASKS[conf.pipe.toUpperCase()]!=null && ACTIVE_TASKS[conf.pipe.toUpperCase()].runner!=null) {
+							runIntegratorTask(conf.pipe, ACTIVE_TASKS[conf.pipe.toUpperCase()].opts, _.extend({}, ACTIVE_TASKS[conf.pipe.toUpperCase()].opts.params, transformResponse), callback);
+						} else if(LOADED_PLUGINS[conf.pipe.toUpperCase()]!=null && LOADED_PLUGINS[conf.pipe.toUpperCase()].runTask!=null) {
+							LOADED_PLUGINS[conf.pipe.toUpperCase()].runTask(transformResponse, function(pipeResponse) {
+								console.log("\x1b[33m%s\x1b[0m",`Task- ${k} Completed @ `+moment().format(), pipeResponse);
+								if(callback!=null && typeof callback=="function") callback(pipeResponse);
+							});
+						} else {
+							console.log("\x1b[31m%s\x1b[0m",`\nTask Pipe - ${conf.pipe} for Task- ${k} Not Found`);
+							if(callback!=null && typeof callback=="function") callback(false, `Task Pipe - ${conf.pipe} for Task- ${k} Not Found`, transformResponse);
+						}
+					} else {
+						console.log("\x1b[33m%s\x1b[0m",`Task- ${k} Completed @ `+moment().format(), transformResponse);
+						if(callback!=null && typeof callback=="function") callback(transformResponse);
+					}
+				});
+			} else {
+				console.log("\x1b[31m%s\x1b[0m",`\nTransformer - ${conf.transform} for Task- ${k} Not Found`);
+				if(callback!=null && typeof callback=="function") callback(false, `Transformer - ${conf.transform} for Task- ${k} Not Found`, responseData);
+			}
+		} else {
+			console.log("\x1b[33m%s\x1b[0m",`Task- ${k} Completed @ `+moment().format(), responseData);
+			if(callback!=null && typeof callback=="function") callback(responseData);
+		}
+	});
 }
