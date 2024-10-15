@@ -1,23 +1,26 @@
 {
-  "name": "utils-automator",
+  "name": "utils-integrator",
   "version": "1.0.0",
-  "description": "Automation Toolkit for projects using API, Scheduller, Triggers and more",
+  "description": "Integration Toolkit for projects",
   "main": "index.js",
   "scripts": {
     "start": "clear;node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "Automator",
+    "Integrator",
     "NodeJS"
   ],
   "author": "Bismay <bismay@smartinfologiks.com>",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.6.8",
+    "bunyan": "^1.8.15",
+    "bunyan-rotating-file-stream": "^2.0.6",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2",
+    "express": "^4.21.0",
     "glob": "^10.3.12",
+    "ioredis": "^5.4.1",
     "lodash": "^4.17.21",
     "md5": "^2.3.0",
     "moment": "^2.30.1",

@@ -1,0 +1,25 @@
+Logiks Studio
+
+1. Home Page -> Card Layout of Projects (Like Insominia, etc)
+	+ Create New Project
+	+ Delete Project
+	+ Archive Project
+	+ Manage Access of Project
+2. Project Editor
+	+ TopBar
+		+ Project Switch
+		+ Preview Project
+		+ Open File
+	+ Sidebar
+		+ App
+		+ FS
+		+ DB
+	+ Main Area
+3. Main Editors
+	+ DB Editor
+	+ Module Editor
+	+ Data Controls Editor
+	+ Page Editor
+	+ Snippet Editor
+4. ADS Editor/Viewer
+

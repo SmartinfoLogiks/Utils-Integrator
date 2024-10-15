@@ -22,6 +22,22 @@ console.log("\x1b[34m%s\x1b[0m","\nIntegrator Initialization Started @ "+moment(
 process.env.START_TIME = moment().format();
 process.env.ROOT_PATH  = __dirname;
 
+//Initialize Helpers
+fs.readdirSync('./helpers/').forEach(function(file) {
+        if ((file.indexOf(".js") > 0 && (file.indexOf(".js") + 3 == file.length))) {
+        	var className = file.toLowerCase().replace(".js", "").toUpperCase();
+            var filePath = path.resolve('./helpers/' + file);
+
+            const tempObj = require(filePath);
+            global[className] = tempObj;
+            // console.log(">>>", className, filePath, LOADED_PLUGINS);
+
+            if(tempObj.initialize!=null) {
+                tempObj.initialize();
+            }
+        }
+    });
+
 //Initialize Plugins
 fs.readdirSync('./plugins/').forEach(function(file) {
         if ((file.indexOf(".js") > 0 && (file.indexOf(".js") + 3 == file.length))) {
@@ -30,6 +46,8 @@ fs.readdirSync('./plugins/').forEach(function(file) {
 
             LOADED_PLUGINS[className] = require(filePath);
             // console.log(">>>", className, filePath, LOADED_PLUGINS);
+
+            LOADED_PLUGINS[className]._PLUGINNAME = className;
 
             if(LOADED_PLUGINS[className].initialize!=null) {
                 LOADED_PLUGINS[className].initialize();
